@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مولد روابط واتساب</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    textarea, input[type="file"], button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .number-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #ffffff;
+      padding: 10px;
+      margin-bottom: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .number-link {
+      flex-grow: 1;
+      color: #007bff;
+      text-decoration: none;
+      margin-left: 10px;
+      direction: ltr;
+    }
+    .number-link.sent {
+      color: #155724;
+    }
+    .delete-btn {
+      background-color: #ff4d4d;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .delete-btn:hover {
+      background-color: #cc0000;
+    }
+    .upload-btn {
+      background-color: #6c63ff;
+      color: white;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>مولد روابط واتساب</h2>
+
+  <label>📁 استيراد أرقام من ملف TXT (كل رقم في سطر)</label>
+  <input type="file" id="fileInput" accept=".txt">
+
+  <label>✍️ أو أدخل الأرقام يدويًا (كل رقم في سطر)</label>
+  <textarea id="numbers" rows="6" placeholder="مثال:
++966500000000
++201000000000"></textarea>
+
+  <label>💬 نص الرسالة</label>
+  <textarea id="message" rows="4" placeholder="اكتب رسالتك هنا..."></textarea>
+
+  <button class="upload-btn" onclick="window.open('https://postimages.org/', '_blank')">📎 إرفاق صورة أو مستند عبر postimages</button>
+
+  <button onclick="generateLinks()">🚀 تجهيز الروابط</button>
+  <button onclick="exportRemaining()">📤 تصدير الأرقام المتبقية</button>
+
+  <div id="numbersContainer"></div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const numbersTextarea = document.getElementById("numbers");
+    const messageInput = document.getElementById("message");
+    const numbersContainer = document.getElementById("numbersContainer");
+
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imported = e.target.result.trim();
+        numbersTextarea.value = imported;
+      };
+      reader.readAsText(file);
+    });
+
+    function generateLinks() {
+      const rawNumbers = numbersTextarea.value.trim();
+      const message = messageInput.value.trim();
+      numbersContainer.innerHTML = "";
+
+      if (!rawNumbers || !message) {
+        numbersContainer.innerHTML = "<strong>الرجاء إدخال الأرقام والرسالة.</strong>";
+        return;
+      }
+
+      const encodedMessage = encodeURIComponent(message);
+
+      const numbers = rawNumbers.split(/\r?\n|\r/)
+        .map(n => n.replace(/\s+/g, '').trim())
+        .filter(n => n.length > 5);
+
+      numbers.forEach(number => {
+        const container = document.createElement("div");
+        container.className = "number-entry";
+
+        const link = document.createElement("a");
+        link.href = `https://wa.me/${number.replace('+', '')}?text=${encodedMessage}`;
+        link.target = "_blank";
+        link.className = "number-link";
+        link.textContent = "+" + number.replace('+', '');
+
+        link.addEventListener("click", () => {
+          link.classList.add("sent");
+          link.textContent = "+" + number.replace('+', '') + " ✅ تم الفتح";
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "❌";
+        deleteBtn.onclick = () => container.remove();
+
+        container.appendChild(link);
+        container.appendChild(deleteBtn);
+        numbersContainer.appendChild(container);
+      });
+    }
+
+    function exportRemaining() {
+      const links = document.querySelectorAll(".number-link");
+      const numbers = [];
+
+      links.forEach(link => {
+        const text = link.textContent.replace(" ✅ تم الفتح", "").trim();
+        if (text.startsWith("+")) {
+          numbers.push(text);
+        }
+      });
+
+      const blob = new Blob([numbers.join("\n")], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "filtered_numbers.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+
+</body>
+</html>
